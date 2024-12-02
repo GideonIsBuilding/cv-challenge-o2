@@ -1,0 +1,48 @@
+- name: update packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: install docker
+  apt:
+    name: 
+      - docker.io
+      - docker-compose
+    state: present
+
+- name: Ensure docker is started
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Log in to Docker Hub
+  docker_login:
+    registry: https://registry-1.docker.io/
+    username: "{{ docker_hub_username }}"
+    password: "{{ docker_hub_password }}"
+
+- name: Create the directory for the backend
+  file:
+    path: /home/ubuntu/backend
+    state: directory
+    mode: '0755'
+
+- name: Create the directory for the frontend
+  file:
+    path: /home/ubuntu/frontend
+    state: directory
+    mode: '0755'
+
+- name: Copy environment file for backend
+  copy:
+    src: /home/gideon/cv-challenge-o2/backend/.env
+    dest: /home/ubuntu/backend/.env
+    mode: '0644'
+
+- name: Copy environment file for frontend
+  copy:
+    src: /home/gideon/cv-challenge-o2/frontend/.env
+    dest: /home/ubuntu/frontend/.env
+    mode: '0644'

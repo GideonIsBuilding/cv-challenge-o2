@@ -1,0 +1,122 @@
+- name: Pull Prometheus image
+  command: docker pull prom/prometheus:latest
+
+- name: Pull Grafana image
+  command: docker pull grafana/grafana:latest
+
+- name: Pull cAdvisor image
+  command: docker pull gcr.io/cadvisor/cadvisor:latest
+
+- name: Pull Redis image
+  command: docker pull redis:latest
+
+- name: Pull Promtail image
+  command: docker pull grafana/promtail:latest
+
+- name: Pull Loki image
+  command: docker pull grafana/loki:latest
+
+- name: Create volume for Prometheus
+  docker_volume:
+    name: prom_data
+    state: present
+
+- name: Create volume for Grafana
+  docker_volume:
+    name: grafana_storage
+    state: present
+
+- name: Create the directory for the Prometheus
+  file:
+    path: /etc/prometheus
+    state: directory
+    mode: '0755'
+
+- name: Copy Prometheus configuration file
+  copy:
+    src: ./prometheus.yml
+    dest: /etc/prometheus/prometheus.yml
+    mode: '0644'
+
+- name: Run Prometheus container
+  community.docker.docker_container:
+    name: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    command: 
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=/prometheus'
+    volumes:
+      - /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prom_data:/prometheus
+    # depends_on:
+    #   - cadvisor
+    #   - loki
+    restart_policy: unless-stopped
+    state: started
+
+- name: Run Grafana container
+  community.docker.docker_container:
+    name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    env:
+      GF_SERVER_ROOT_URL: "http://54.90.144.248:3000/grafana"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana_storage:/var/lib/grafana
+    networks:
+      - name: app-network
+    # depends_on:
+    #   - loki
+    restart_policy: unless-stopped
+    state: started
+
+- name: Run cAdvisor container 
+  community.docker.docker_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8083:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    # depends_on:
+    #   - redis
+    state: started
+
+- name: Run Redis container
+  community.docker.docker_container:
+    name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - name: app-network
+    state: started
+
+- name: Run Promtail container
+  community.docker.docker_container:
+    name: promtail
+    image: grafana/promtail:latest
+    # depends_on:
+    #   - loki
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/log:/var/log
+    restart_policy: always
+    state: started
+
+- name: Run Loki container
+  community.docker.docker_container:
+    name: loki
+    image: grafana/loki:latest
+
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml

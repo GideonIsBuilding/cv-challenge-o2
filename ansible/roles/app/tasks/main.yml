@@ -1,0 +1,107 @@
+- name: Pull backend image
+  command: docker pull gideonisbuilding/backend:latest
+
+- name: Pull frontend image
+  command: docker pull gideonisbuilding/frontend:latest
+
+- name: Pull Postgres image
+  command: docker pull postgres:latest
+
+- name:  Pull adminer image
+  command: docker pull adminer:latest
+
+- name: Pull Proxy image
+  command: docker pull jc21/nginx-proxy-manager:latest
+
+- name: Create volume for Postgres
+  docker_volume:
+    name: postgres_data
+    state: present
+
+- name: Create network
+  docker_network:
+    name: app-network
+    driver: bridge
+    state: present
+
+- name: Run Postgres container
+  community.docker.docker_container:
+    name: db
+    image: postgres:latest
+    env_file: /home/ubuntu/backend/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - name: app-network
+    healthcheck:
+      test: "pg_isready -h localhost -p 5432"
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    restart_policy: unless-stopped
+    state: started
+
+- name: Run backend container
+  community.docker.docker_container:
+    name: backend
+    image: gideonisbuilding/backend:latest
+    ports:
+      - "8000:8000"
+    networks:
+      - name: app-network
+    env_file: /home/ubuntu/backend/.env
+    # depends_on:
+    #   - db
+    env:
+      POSTGRES_SERVER : "db"
+      POSTGRES_USER : "app"
+      POSTGRES_PASSWORD : "changethis123"
+      POSTGRES_DB : "app"
+    restart_policy: always
+    state: started
+
+- name: Run frontend container
+  community.docker.docker_container:
+    name: frontend
+    image: gideonisbuilding/frontend:latest
+    env_file: /home/ubuntu/frontend/.env
+    ports:
+      - "5173:80"
+    networks:
+      - name: app-network
+    # depends_on:
+    #   - backend
+    state: started
+
+- name: Run adminer container
+  community.docker.docker_container:
+    name: adminer
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - name: app-network
+    # depends_on:
+    #   - db
+    state: started
+
+- name: Run Proxy container
+  community.docker.docker_container:
+    name: proxy
+    image: jc21/nginx-proxy-manager:latest
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    env:
+      DB_SQLITE_FILE: "/data/database.sqlite"
+    networks:
+      - name: app-network
+    # depends_on:
+    #   - frontend
+    volumes:
+      - ./nginx-data:/data
+      - ./nginx-letsencrypt:/etc/letsencrypt
+    state: started
