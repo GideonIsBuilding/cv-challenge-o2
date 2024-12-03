@@ -47,13 +47,6 @@ resource "aws_route_table_association" "dojo-route-table-assoc" {
     route_table_id = aws_route_table.dojo-route-table.id
 }
 
-# resource "aws_eip" "dojo-eip" {
-#     associate_with_private_ip = true
-#     tags = {
-#         Name = "Dojo-EIP"
-#     }
-# }
-
 data "aws_eip" "dojo-eip" {
     filter {
         name   = "tag:Name"
