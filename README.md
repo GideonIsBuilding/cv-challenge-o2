@@ -2,9 +2,7 @@
 
 ### **Project Overview**
 
-Welcome to Week 2 of the **DevOps CV Challenge**! In this task, you will automate the deployment of a full-stack application and monitoring infrastructure using **Terraform** and **Ansible**. The goal is to create an efficient and automated process for provisioning cloud infrastructure, deploying Dockerized applications, and setting up monitoring and logging solutions—all using Infrastructure as Code (IaC) and Configuration Management (CM) tools.
-
-By the end of this task, you'll have automated your infrastructure provisioning and application deployment pipeline, enhancing scalability, reliability, and maintainability.
+This task automates the deployment of a full-stack application and monitoring infrastructure using **Terraform** and **Ansible**. The goal is to create an efficient and automated process for provisioning cloud infrastructure, deploying Dockerized applications, and setting up monitoring and logging solutions—all using Infrastructure as Code (IaC) and Configuration Management (CM) tools.
 
 ---
 
@@ -17,15 +15,8 @@ By the end of this task, you'll have automated your infrastructure provisioning 
    2. [Step 2: Design the Architecture](#step-2-design-the-architecture)
    3. [Step 3: Configure Terraform](#step-3-configure-terraform)
    4. [Step 4: Configure Ansible](#step-4-configure-ansible)
-5. [Deployment Process](#deployment-process)
-6. [Configuration Details](#configuration-details)
-7. [Monitoring Stack](#monitoring-stack)
-8. [Testing the Deployment](#testing-the-deployment)
-9. [Troubleshooting](#troubleshooting)
-10. [Contributing](#contributing)
-11. [License](#license)
-12. [Acknowledgements](#acknowledgements)
-13. [Architecture Diagram](#architecture-diagram)
+5. [Testing the Deployment](#testing-the-deployment)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
