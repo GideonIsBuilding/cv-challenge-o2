@@ -47,7 +47,7 @@ Additionally:
 
 #### **Architecture Diagram**
 
-![Architecture Diagram](./devops-dojo.drawio.png)
+![Architecture Diagram](./devops-dojo.drawio1.png)
 
 The deployment architecture consists of two primary components: **Application Stack** and **Monitoring Stack**.
 
