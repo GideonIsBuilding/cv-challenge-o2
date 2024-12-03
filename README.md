@@ -1,129 +1,175 @@
-### Week 2 Task: Automate Deployment with Terraform and Ansible  
+## Automate Deployment with Terraform and Ansible
 
-Welcome to Week 2 of the **DevOps CV Challenge**! This week, you’ll be diving into the exciting world of **Infrastructure as Code (IaC)** and **Configuration Management (CM)**. Get ready to use **Terraform** for provisioning cloud infrastructure and **Ansible** for configuring and deploying your application and monitoring stacks. By the end of this task, you'll not only gain hands-on experience automating infrastructure but also learn how to seamlessly integrate multiple tools to create a fully automated deployment pipeline..  
+### **Project Overview**
 
----
+Welcome to Week 2 of the **DevOps CV Challenge**! In this task, you will automate the deployment of a full-stack application and monitoring infrastructure using **Terraform** and **Ansible**. The goal is to create an efficient and automated process for provisioning cloud infrastructure, deploying Dockerized applications, and setting up monitoring and logging solutions—all using Infrastructure as Code (IaC) and Configuration Management (CM) tools.
 
-### **Task Overview**  
-
-You will:
-1. **Prebuild and push Docker images for the application stack from Week 1..**
-2. **Design and provision cloud infrastructure using Terraform.**
-3. **Use Terraform to:**
-   - Trigger Ansible playbooks for:
-     - Deploying the application stack.
-     - Deploying the monitoring stack.
-     - Configuring routing with Traefik or Nginx.
-   - Automatically generate the `inventory.ini` file for Ansible.  
-4. **Set up application and monitoring stacks using Ansible roles.**
-
-The final deployment will be tested by running:
-```bash
-terraform apply -auto-approve
-```
-This command should provision the infrastructure, deploy all services, and configure routing automatically.
+By the end of this task, you'll have automated your infrastructure provisioning and application deployment pipeline, enhancing scalability, reliability, and maintainability.
 
 ---
 
-### **Components**  
-
-#### **1. Application Stack(Same app as Week 1)**
-- **Frontend:** A React application.
-- **Backend:** A FastAPI service.
-- **Database:** PostgreSQL.
-- **Reverse Proxy:** Traefik or Nginx (for routing between services).
-
-You must prebuild the Docker images for the **Frontend** and **Backend** and push them to your public Docker Hub repositories:  
-- Example frontend image: `docker.io/<your_username>/frontend:latest`  
-- Example backend image: `docker.io/<your_username>/backend:latest`  
-
-The application stack Ansible role will pull these images from Docker Hub.
-
----
-
-#### **2. Monitoring Stack**
-- **Prometheus** for metrics collection.
-- **Grafana** for visualization (configured with dashboards for cAdvisor and Loki).
-- **cAdvisor** for container-level metrics.
-- **Loki** for log aggregation.
-- **Promtail** for log collection.
+### **Table of Contents**
+1. [Introduction](#introduction)
+2. [Pre-requisites](#pre-requisites)
+3. [Architecture Overview](#architecture-overview)
+4. [Steps to Set Up and Deploy](#steps-to-set-up-and-deploy)
+   1. [Step 1: Prebuild Docker Images](#step-1-prebuild-docker-images)
+   2. [Step 2: Design the Architecture](#step-2-design-the-architecture)
+   3. [Step 3: Configure Terraform](#step-3-configure-terraform)
+   4. [Step 4: Configure Ansible](#step-4-configure-ansible)
+5. [Deployment Process](#deployment-process)
+6. [Configuration Details](#configuration-details)
+7. [Monitoring Stack](#monitoring-stack)
+8. [Testing the Deployment](#testing-the-deployment)
+9. [Troubleshooting](#troubleshooting)
+10. [Contributing](#contributing)
+11. [License](#license)
+12. [Acknowledgements](#acknowledgements)
+13. [Architecture Diagram](#architecture-diagram)
 
 ---
 
-#### **3. Deployment Workflow**
-- **Terraform:**  
-  - Provisions the cloud infrastructure (e.g., server instance, networking).
-  - Generates the Ansible inventory file (`inventory.ini`) dynamically.  
-  - Triggers Ansible playbooks.  
+### **Introduction**
 
-- **Ansible:**  
-  - Configures the server environment.  
-  - Creates a shared Docker network.  
-  - Deploys the application and monitoring stacks by pulling prebuilt images from Docker Hub and running them via Docker Compose.  
-  - Configures Traefik or Nginx for routing across all services.
+This project is designed to automate the deployment of a **full-stack application** and its associated **monitoring infrastructure** using: **Terraform** for infrastructure provisioning and **Ansible** for configuration management and application deployment.
 
----
+Key components:
+- **Terraform**: Infrastructure provisioning (VM, networking, etc.)
+- **Ansible**: Application deployment and configuration automation
+- **Docker**: Containerization of frontend, backend, and monitoring services
+- **Prometheus and Grafana**: For monitoring and visualizing the application metrics and logs
 
-### **What You Need to Do**  
+### **Pre-requisites**
 
-#### **Step 1: Prebuild Docker Images**  
-1. Build the Docker images for the **Frontend** and **Backend** applications(Same app as Week 1).
-2. Push the images to your public Docker Hub repositories.  
+Before you start with the setup, make sure you have the following installed:
+
+- **Terraform**: [Install Terraform](https://www.terraform.io/downloads.html)
+- **Ansible**: [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
+- **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
+- **AWS CLI** (Optional, if using AWS): [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
+
+Additionally:
+- A Docker Hub account for pushing your prebuilt Docker images.
+- Cloud credentials (AWS, GCP, etc.) for provisioning infrastructure.
+
+### **Architecture Overview**
+
+#### **Architecture Diagram**
+
+![Architecture Diagram](./devops-dojo.drawio.png)
+
+The deployment architecture consists of two primary components: **Application Stack** and **Monitoring Stack**.
+
+1. **Application Stack**:
+   - **Frontend**: React application in Docker
+   - **Backend**: FastAPI service in Docker
+   - **Database**: PostgreSQL (running in a Docker container)
+   - **Reverse Proxy**: Nginx for routing requests between services
+
+2. **Monitoring Stack**:
+   - **Prometheus** for collecting metrics
+   - **Grafana** for visualizing metrics and logs
+   - **cAdvisor** for monitoring container-level metrics
+   - **Loki** and **Promtail** for logs aggregation
+
+### **Steps to Set Up and Deploy**
+
+#### **Step 1: Prebuild Docker Images**
+
+To containerize the application, we need to prebuild Docker images for the **Frontend** (React) and **Backend** (FastAPI) components. These images will be pushed to Docker Hub for easy deployment across environments.
+
+1. **Frontend Docker Image**:
+   - **Build** the frontend React application using Docker:
+   ```bash
+   docker login -u <your-username> -p <password>
+   git clone https://github.com/GideonIsBuilding/cv-challenge-o2.git && cd cv-challenge-o2
+   docker build -t <your-username>/frontend:latest ./frontend
+   docker push <your-username>/frontend:latest
+   ```
+
+2. **Backend Docker Image**:
+   - Similarly, **build** and **push** the backend FastAPI service to Docker Hub:
+   ```bash
+   docker build -t <your-username>/backend:latest ./backend
+   docker push <your-username>/backend:latest
+   ```
 
 #### **Step 2: Design the Architecture**
-1. Create an architecture diagram for the deployment, showing how the application and monitoring stacks interact.  
-2. Ensure your design accounts for:  
-   - Shared Docker networks.  
-   - Routing between services.  
 
-#### **Step 3: Write Terraform and Ansible Configurations**
-1. **Terraform:**  
-   - Provision cloud infrastructure (e.g., a VM instance).  
-   - Automatically generate the Ansible inventory file (`inventory.ini`).  
-   - Trigger Ansible playbooks.  
+In this step, you'll define the architecture of the cloud infrastructure, ensuring it includes:
+- The required cloud resources (e.g., EC2 instances, networks, security groups).
+- The **shared Docker networks** for communication between containers.
+- **Routing configurations** (using Nginx).
 
-2. **Ansible:**  
-   - Use roles to:
-     - Configure the server environment.
-     - Set up and run the **Application Stack** (using Docker Compose).
-     - Set up and run the **Monitoring Stack** (using Docker Compose).
-     - Configure routing with Traefik.
+#### **Step 3: Configure Terraform**
+
+1. **Set up Terraform Configuration**: 
+   - In the `terraform/` directory, you’ll find `main.tf` for provisioning the infrastructure. 
+   - Configure variables such as cloud provider, instance type, and region, depending on where your infrastructure will be deployed.
+   - Example: Set the AWS region and instance type in `variables.tf`.
+
+2. **Generate Inventory File**: 
+   - Terraform will dynamically generate the `inventory` file used by Ansible for connecting to the remote server based on the jinja file `inventory.tpl`. Use this format:
+   ```
+   [app]
+   54.90.144.248 ansible_user=ubuntu ansible_ssh_private_key_file=/home/gideon/Downloads/nginix.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+   ```
+Replace the IP with your elastic IP address and the private key with appropriate file path on your local machine.
+
+#### **Step 4: Configure Ansible**
+
+1. **Inventory File**:
+   - The `inventory` file is generated by Terraform. It contains the IP addresses and SSH credentials required to access your provisioned servers.
+
+2. **Ansible Roles**:
+   - Ansible roles are used to automate the configuration of the server and the deployment of the application and monitoring stacks.
+   - In `ansible/playbook.yml`, there are roles:
+     - Common: Updates and upgrade packages, installs docker, logs into the docker hub, and copies the needed enviroment variable for the frotend and backend services.
+     - App: Deploys the frontend, backend, Adminer, Nginx Proxy Manager, and PostgreSQL using Docker Compose.
+     - Monitoring: Set up Prometheus and Grafana for monitoring.
+
+**Why Ansible roles?**
+- Ansible roles modularize tasks and make the playbook reusable and scalable. This modularity ensures that each part of the configuration is reusable in future projects or environments.
 
 ---
 
-### **Submission Requirements**  
-- **Docker Hub Links:**  
-  Provide the links to your prebuilt Docker images.  
-- **Repository:**  
-  Push your Terraform and Ansible code to your GitHub repository and share the link.  
-- **Architecture Diagram:**  
-  Upload the diagram as an image file in the repository.
-- **Documentation:**
-  Write a detailed blog post documenting your approach, the architecture, and the deployment process. The blog should include the architecture diagram and provide insights   into the tools used, the challenges faced, and how you overcame them. Publish the post on any blog platform of your choice (e.g., Medium, Dev.to, personal blog).
-  Share the link to your blog post in the submission.
+### **Deployment Process**
 
-Submit your project via this [submission form](#).
-
----
-
-### **How Testing Will Be Done**
-1. The reviewers will clone your repository.  
-2. Run:
+To deploy the application stack and monitoring infrastructure:
+1. **Run Terraform**:
    ```bash
+   cd terraform
+   terraform init   # Initialize the configuration
+   terraform plan   # Apply the configuration and provision resources
    terraform apply -auto-approve
    ```
-3. This command should:
-   - Provision the infrastructure.
-   - Automatically deploy both the application and monitoring stacks.
-   - Configure routing for all services.  
+   This will provision the cloud infrastructure and trigger the Ansible playbook to configure the server and deploy all required services.
 
-4. The following will be verified:  
-   - Application accessibility through the reverse proxy.  
-   - Monitoring dashboards in Grafana (including cAdvisor and Loki).  
+2. **Ansible Playbook Execution**:
+   Ansible will automatically:
+   - Set up the environment (install Docker, etc.).
+   - Deploy the application stack (frontend, backend, database).
+   - Set up the monitoring stack (Prometheus, Grafana, cAdvisor, Loki).
 
 ---
 
-### **Deadline**
-All submissions are due by **Sunday, 11:59 PM**.  
+### **Troubleshooting**
 
-Good luck, and happy automating!
+1. **Connection Issues**:
+   - Make sure that SSH ports are open in the security group for EC2 instances.
+   - Ensure Terraform has provisioned the resources successfully.
+
+2. **Ansible Playbook Failures**:
+   - Check Ansible logs for any errors in playbook execution.
+   - Confirm Docker is installed and functional.
+
+3. **Monitoring Issues**:
+   - Ensure that Prometheus is scraping metrics correctly and that Grafana is configured to pull data from Prometheus.
+
+---
+
+### **Contributing**
+
+Feel free to fork the repository and submit pull requests with improvements, bug fixes, or new features.
+
+---
