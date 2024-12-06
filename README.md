@@ -118,6 +118,7 @@ Replace the IP with your elastic IP address and the private key with appropriate
      - Common: Updates and upgrade packages, installs docker, logs into the docker hub, and copies the needed enviroment variable for the frotend and backend services.
      - App: Deploys the frontend, backend, Adminer, Nginx Proxy Manager, and PostgreSQL using Docker Compose.
      - Monitoring: Set up Prometheus and Grafana for monitoring.
+     NOTE: Remember to create a `docker_hub.yml` in a directory named `vars` in the `ansible` directory. 
 
 **Why Ansible roles?**
 - Ansible roles modularize tasks and make the playbook reusable and scalable. This modularity ensures that each part of the configuration is reusable in future projects or environments.
